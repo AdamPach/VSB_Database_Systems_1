@@ -136,3 +136,5 @@ WHERE NOT EXISTS(
         JOIN film_actor fa ON film.film_id = fa.film_id
     WHERE a.actor_id = fa.actor_id AND film.length >= 180
 ) AND a.actor_id IN (SELECT actor_id FROM film_actor);
+
+
