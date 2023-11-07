@@ -86,3 +86,45 @@ WHERE org1.nazev_organu_cz = 'Poslanecký klub TOP 09'
 )
 GROUP BY o1.id_osoba, o1.jmeno, o1.prijmeni
 ORDER BY pocet_mesicu_top_09 DESC
+
+-- 2 B
+WITH tab_omluvy AS (
+SELECT DISTINCT o1.id_osoba, o1.jmeno, o1.prijmeni,
+    (
+        SELECT COUNT(*)
+        FROM osoba o2
+            JOIN poslanec p1 ON o2.id_osoba = p1.id_osoba
+            JOIN omluva oml ON p1.id_poslanec = oml.id_poslanec
+        WHERE o1.id_osoba = o2.id_osoba
+            AND YEAR(oml.den) = 2021
+            AND MONTH(oml.den) BETWEEN 1 AND 6
+    ) AS pocet_dnu_1_6,
+    (
+        SELECT COUNT(*)
+        FROM osoba o2
+            JOIN poslanec p1 ON o2.id_osoba = p1.id_osoba
+            JOIN omluva oml ON p1.id_poslanec = oml.id_poslanec
+        WHERE o1.id_osoba = o2.id_osoba
+            AND YEAR(oml.den) = 2021
+            AND MONTH(oml.den) BETWEEN 7 AND 12
+    ) AS pocet_dnu_7_12
+FROM osoba o1)
+SELECT *
+FROM tab_omluvy
+WHERE pocet_dnu_1_6 > pocet_dnu_7_12
+    AND pocet_dnu_1_6 > 47;
+
+-- 3 B
+
+SELECT o1.id_osoba, o1.jmeno, o1.prijmeni, COUNT(*) AS pocet_klubu,
+       SUM(COALESCE(DATEDIFF(MONTH, z1.od_o, z1.do_o),0)) AS pocet_mesicu_v_klubu
+FROM osoba o1
+    JOIN zarazeni z1 ON o1.id_osoba = z1.id_osoba
+    JOIN organ org1 ON org1.id_organ = z1.id_of AND z1.cl_funkce = 0
+    JOIN typ_organu torg1 ON org1.id_typ_org = torg1.id_typ_org
+    JOIN poslanec p1 ON o1.id_osoba = p1.id_osoba AND org1.rodic_id_organ = p1.id_organ
+WHERE torg1.nazev_typ_org_cz = 'Klub'
+    AND org1.rodic_id_organ = 173
+GROUP BY o1.id_osoba, o1.jmeno, o1.prijmeni
+HAVING COUNT(*) > 1
+ORDER BY pocet_klubu DESC

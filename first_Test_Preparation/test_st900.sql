@@ -110,3 +110,34 @@ WHERE torg1.nazev_typ_org_cz = 'Výbor'
 GROUP BY o1.id_osoba, o1.jmeno, o1.prijmeni, o1.prijmeni
 HAVING COUNT(*) = 8
 ORDER BY pocet_delegaci DESC;
+
+-- 2 B
+
+WITH tab_omluvy AS(
+SELECT o1.id_osoba, o1.jmeno, o1.prijmeni,
+       (
+        SELECT COUNT(*)
+        FROM osoba o2
+            JOIN dbo.poslanec p on o2.id_osoba = p.id_osoba
+            JOIN omluva oml ON p.id_poslanec = oml.id_poslanec
+            JOIN organ org ON oml.id_organ = org.id_organ
+        WHERE o1.id_osoba = o2.id_osoba
+            AND YEAR(org.od_organ) = 2021
+            AND MONTH(oml.den) = 4
+        ) AS pocet_duben,
+    (
+        SELECT COUNT(*)
+        FROM osoba o2
+            JOIN dbo.poslanec p on o2.id_osoba = p.id_osoba
+            JOIN omluva oml ON p.id_poslanec = oml.id_poslanec
+            JOIN organ org ON oml.id_organ = org.id_organ
+        WHERE o1.id_osoba = o2.id_osoba
+            AND YEAR(org.od_organ) = 2021
+            AND MONTH(oml.den) = 5
+        ) AS pocet_kveten
+FROM osoba o1)
+SELECT *
+FROM tab_omluvy
+WHERE pocet_duben > pocet_kveten
+    AND pocet_duben > 11
+ORDER BY pocet_duben DESC
